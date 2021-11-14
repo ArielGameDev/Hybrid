@@ -13,6 +13,10 @@ public class Player : MonoBehaviour
     Transform m_cursorHelper;
 
 
+    [SerializeField]
+    TransformEffects _onDisable, _onEnable;
+
+
 
     Rigidbody m_rigibBody;
     Camera m_camera;
@@ -24,19 +28,49 @@ public class Player : MonoBehaviour
         m_camera = Camera.main;
     }
 
+    void Update()
+    {
+
+        Vector3 rayHitPoint;
+
+        rayHitPoint = GetCameraMouseProjection();
+
+        if (m_cursorHelper != null)
+            m_cursorHelper.position = rayHitPoint;
+
+        transform.LookAt(rayHitPoint, transform.up);
+
+    }
+
     void FixedUpdate()
     {
-        Vector3 moveVector, rayHitPoint;
+        Vector3 moveVector;
 
         moveVector = GetMovementVector();
         MovePlayer(moveVector, _speed);
 
-        rayHitPoint = GetCameraMouseProjection();
+    }
 
-        if(m_cursorHelper != null)
-            m_cursorHelper.position = rayHitPoint;
+    void OnDisable()
+    {
+        // avoid sliding on switch
+        m_rigibBody.velocity = Vector3.zero;
 
-        transform.LookAt(rayHitPoint,transform.up);
+        if(_onDisable == null)
+            return;
+
+        List<Transform> trList = new List<Transform>();
+        trList.Add(transform);
+        _onDisable.Apply(trList);
+    }
+
+    void OnEnable()
+    {
+        if(_onEnable == null)
+            return;
+        List<Transform> trList = new List<Transform>();
+        trList.Add(transform);
+        _onEnable.Apply(trList);
     }
 
     void MovePlayer(Vector3 moveVector, float speed)
@@ -81,9 +115,9 @@ public class Player : MonoBehaviour
 
         Plane raycastPlane = new Plane(transform.up, transform.position);
         float rayEnterDistance;
-        raycastPlane.Raycast(cameraRay,out rayEnterDistance);
+        raycastPlane.Raycast(cameraRay, out rayEnterDistance);
 
-        Vector3 rayHitPoint = cameraRay.origin + cameraRay.direction*rayEnterDistance;
+        Vector3 rayHitPoint = cameraRay.origin + cameraRay.direction * rayEnterDistance;
 
         return rayHitPoint;
     }
